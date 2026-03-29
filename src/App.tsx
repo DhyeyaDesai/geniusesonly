@@ -47,9 +47,9 @@ const getTileColors = (guess: string, answer: string): TileColor[] => {
 };
 
 const colorMap: Record<string, string> = {
-  correct: "#538d4e",
-  present: "#b59f3b",
-  absent: "#3a3a3c",
+  correct: "var(--color-correct)",
+  present: "var(--color-present)",
+  absent: "var(--color-absent)",
   tbd: "transparent",
   empty: "transparent",
 };
@@ -58,8 +58,8 @@ const borderMap: Record<string, string> = {
   correct: "transparent",
   present: "transparent",
   absent: "transparent",
-  tbd: "#565656",
-  empty: "#3a3a3c",
+  tbd: "var(--color-border-filled)",
+  empty: "var(--color-border-empty)",
 };
 
 function TileRow({ guess, answer, isSubmitted, shake }: {
@@ -75,15 +75,17 @@ function TileRow({ guess, answer, isSubmitted, shake }: {
         const letter = guessArr[i] || "";
         const status: TileColor = isSubmitted ? colors[i] : letter ? "tbd" : "empty";
         return (
-          <div key={i} style={{
-            width: 52, height: 52,
-            border: `2px solid ${borderMap[status]}`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 28, fontWeight: 700, color: "#fff", textTransform: "uppercase",
-            backgroundColor: colorMap[status],
-            borderRadius: 4,
-            animation: isSubmitted ? `flip 0.5s ease ${i * 0.15}s both` : shake ? "shake 0.3s ease" : "none",
-          }}>{letter}</div>
+          <div key={i} className={isSubmitted ? "tile flip" : shake ? "tile shake" : "tile"}
+            style={{
+              width: 52, height: 52,
+              border: `2px solid ${borderMap[status]}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 28, fontWeight: 700, color: "var(--color-text)", textTransform: "uppercase",
+              backgroundColor: isSubmitted ? undefined : colorMap[status],
+              borderRadius: 4,
+              animationDelay: isSubmitted ? `${i * 0.3}s` : undefined,
+              ["--tile-color" as string]: colorMap[status],
+            }}>{letter}</div>
         );
       })}
     </div>
@@ -104,11 +106,11 @@ function Keyboard({ usedLetters, onKey }: {
         <div key={ri} style={{ display: "flex", gap: 5 }}>
           {row.map(k => {
             const status = usedLetters[k];
-            const bg = status ? colorMap[status] : "#818384";
+            const bg = status ? colorMap[status] : "var(--color-key-bg)";
             return (
               <button key={k} onClick={() => onKey(k)} style={{
                 padding: "14px 0", minWidth: k.length > 1 ? 58 : 36,
-                backgroundColor: bg, color: "#fff", border: "none", borderRadius: 4,
+                backgroundColor: bg, color: "var(--color-text)", border: "none", borderRadius: 4,
                 fontSize: k.length > 1 ? 11 : 16, fontWeight: 700, cursor: "pointer",
                 textTransform: "uppercase",
               }}>{k}</button>
@@ -239,34 +241,22 @@ export default function App() {
             value={creatorWord}
             onChange={e => { setCreatorWord(e.target.value.replace(/[^a-zA-Z]/g, "")); setCreatorError(""); setShareLink(""); }}
             placeholder="Enter any word"
-            style={{
-              padding: "14px 16px", fontSize: 18, borderRadius: 8, border: "2px solid #3a3a3c",
-              backgroundColor: "#1a1a1b", color: "#fff", outline: "none", textAlign: "center",
-              letterSpacing: 4, textTransform: "uppercase", fontWeight: 700,
-            }}
+            className="creator-input"
             onKeyDown={e => e.key === "Enter" && handleCreate()}
           />
           <button onClick={handleCreate} disabled={validating || !creatorWord.trim()}
-            style={{
-              padding: "14px", fontSize: 16, fontWeight: 700, borderRadius: 8, border: "none",
-              backgroundColor: validating ? "#3a3a3c" : "#538d4e", color: "#fff", cursor: "pointer",
-            }}
+            className="creator-btn"
+            style={{ backgroundColor: validating ? "var(--color-absent)" : "var(--color-correct)" }}
           >{validating ? "Checking..." : "Create Puzzle"}</button>
-          {creatorError && <p style={{ color: "#e04040", fontSize: 14, textAlign: "center" }}>{creatorError}</p>}
+          {creatorError && <p style={{ color: "var(--color-error)", fontSize: 14, textAlign: "center" }}>{creatorError}</p>}
           {shareLink && (
-            <div style={{ backgroundColor: "#1a1a1b", borderRadius: 8, padding: 16, marginTop: 8 }}>
-              <p style={{ fontSize: 13, color: "#818384", margin: "0 0 8px" }}>Share this link:</p>
+            <div className="share-box">
+              <p style={{ fontSize: 13, color: "var(--color-subtle)", margin: "0 0 8px" }}>Share this link:</p>
               <div style={{ display: "flex", gap: 8 }}>
-                <input readOnly value={shareLink} style={{
-                  flex: 1, padding: "10px 12px", fontSize: 13, borderRadius: 6,
-                  border: "1px solid #3a3a3c", backgroundColor: "#121213", color: "#fff",
-                }} />
+                <input readOnly value={shareLink} className="share-input" />
                 <button onClick={() => { navigator.clipboard.writeText(shareLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                  style={{
-                    padding: "10px 16px", borderRadius: 6, border: "none",
-                    backgroundColor: copied ? "#538d4e" : "#818384", color: "#fff",
-                    fontWeight: 700, fontSize: 13, cursor: "pointer", whiteSpace: "nowrap",
-                  }}
+                  className="copy-btn"
+                  style={{ backgroundColor: copied ? "var(--color-correct)" : "var(--color-key-bg)" }}
                 >{copied ? "Copied!" : "Copy"}</button>
               </div>
             </div>
@@ -293,15 +283,12 @@ export default function App() {
       <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 8 }}>{rows}</div>
 
       {gameOver && won && (
-        <button onClick={shareResults} style={{
-          marginTop: 12, padding: "12px 24px", backgroundColor: "#538d4e", color: "#fff",
-          border: "none", borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: "pointer",
-        }}>Share Results</button>
+        <button onClick={shareResults} className="share-results-btn">Share Results</button>
       )}
 
       <Keyboard usedLetters={usedLetters} onKey={handleKey} />
 
-      {validatingGuess && <p style={{ color: "#818384", fontSize: 13, marginTop: 8 }}>Checking word...</p>}
+      {validatingGuess && <p style={{ color: "var(--color-subtle)", fontSize: 13, marginTop: 8 }}>Checking word...</p>}
     </div>
   );
 }

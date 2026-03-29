@@ -62,6 +62,21 @@ const borderMap: Record<string, string> = {
   empty: "var(--color-border-empty)",
 };
 
+const shadowMap: Record<string, string> = {
+  correct: "0 0 14px rgba(34, 197, 94, 0.75)",
+  present: "0 0 14px rgba(245, 158, 11, 0.75)",
+  absent:  "0 0 10px rgba(139, 92, 246, 0.55)",
+  tbd:   "none",
+  empty: "none",
+};
+
+const ALL_KEYS = ["q","w","e","r","t","y","u","i","o","p","a","s","d","f","g","h","j","k","l","Enter","z","x","c","v","b","n","m","⌫"];
+const rainbowKeyBg: Record<string, string> = {};
+ALL_KEYS.forEach((key, i) => {
+  const hue = Math.round((i / (ALL_KEYS.length - 1)) * 300);
+  rainbowKeyBg[key] = `hsl(${hue}, 70%, 35%)`;
+});
+
 function TileRow({ guess, answer, isSubmitted, shake }: {
   guess: string; answer: string; isSubmitted: boolean; shake: boolean;
 }) {
@@ -85,6 +100,7 @@ function TileRow({ guess, answer, isSubmitted, shake }: {
               borderRadius: 4,
               animationDelay: isSubmitted ? `${i * 0.3}s` : undefined,
               ["--tile-color" as string]: colorMap[status],
+              ["--tile-shadow" as string]: isSubmitted ? shadowMap[status] : "none",
             }}>{letter}</div>
         );
       })}
@@ -106,7 +122,7 @@ function Keyboard({ usedLetters, onKey }: {
         <div key={ri} style={{ display: "flex", gap: 5 }}>
           {row.map(k => {
             const status = usedLetters[k];
-            const bg = status ? colorMap[status] : "var(--color-key-bg)";
+            const bg = status ? colorMap[status] : (rainbowKeyBg[k] ?? "var(--color-key-bg)");
             return (
               <button key={k} onClick={() => onKey(k)} style={{
                 padding: "14px 0", minWidth: k.length > 1 ? 58 : 36,
@@ -246,7 +262,7 @@ export default function App() {
           />
           <button onClick={handleCreate} disabled={validating || !creatorWord.trim()}
             className="creator-btn"
-            style={{ backgroundColor: validating ? "var(--color-absent)" : "var(--color-correct)" }}
+            style={{ background: validating ? "var(--color-absent)" : "linear-gradient(90deg, #ff3366, #ff8c00, #ffe600, #00e676, #00b4ff, #9c27b0)" }}
           >{validating ? "Checking..." : "Create Puzzle"}</button>
           {creatorError && <p style={{ color: "var(--color-error)", fontSize: 14, textAlign: "center" }}>{creatorError}</p>}
           {shareLink && (
@@ -256,7 +272,7 @@ export default function App() {
                 <input readOnly value={shareLink} className="share-input" />
                 <button onClick={() => { navigator.clipboard.writeText(shareLink); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                   className="copy-btn"
-                  style={{ backgroundColor: copied ? "var(--color-correct)" : "var(--color-key-bg)" }}
+                  style={{ background: copied ? "var(--color-correct)" : "linear-gradient(90deg, #ff3366, #ff8c00, #ffe600, #00e676, #00b4ff, #9c27b0)" }}
                 >{copied ? "Copied!" : "Copy"}</button>
               </div>
             </div>

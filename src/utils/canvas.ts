@@ -96,14 +96,253 @@ export function drawBat(
   }
 }
 
-/** Setup a canvas to fill the viewport and keep it sized on resize.
+/**
+ * 🍆 Eggplant. Caller sets ctx.fillStyle for the body colour.
+ * Elongated teardrop body with a slight curve, green calyx with
+ * star-shaped sepals, and a thick curved stem.
+ */
+export function drawEggplant(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  s: number
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // body — symmetric oval, wide in lower half, narrowing toward calyx at top
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.5);
+  ctx.bezierCurveTo( s * 0.32, -s * 0.5,  s * 0.5, -s * 0.12,  s * 0.5,  s * 0.2);
+  ctx.bezierCurveTo( s * 0.5,   s * 0.55,  s * 0.28,  s * 0.78,  0,  s * 0.78);
+  ctx.bezierCurveTo(-s * 0.28,  s * 0.78, -s * 0.5,   s * 0.55, -s * 0.5,  s * 0.2);
+  ctx.bezierCurveTo(-s * 0.5,  -s * 0.12, -s * 0.32, -s * 0.5,   0, -s * 0.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // highlight (upper-right, glassy)
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.ellipse(s * 0.16, -s * 0.04, s * 0.08, s * 0.26, 0.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // calyx — 5 leaf sepals evenly fanning outward, centered on body top
+  const calyxY = -s * 0.5;
+  ctx.fillStyle = "#2d7a16";
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 - Math.PI / 2;
+    ctx.save();
+    ctx.translate(0, calyxY);
+    ctx.rotate(a);
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.bezierCurveTo(-s * 0.06, -s * 0.1, -s * 0.04, -s * 0.24, 0, -s * 0.28);
+    ctx.bezierCurveTo( s * 0.04, -s * 0.24,  s * 0.06, -s * 0.1,  0,  0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // calyx base cap (centered)
+  ctx.fillStyle = "#2d7a16";
+  ctx.beginPath();
+  ctx.ellipse(0, calyxY, s * 0.14, s * 0.07, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // curved stem rising from calyx
+  ctx.strokeStyle = "#3a8f1e";
+  ctx.lineWidth = Math.max(2, s * 0.1);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(0, calyxY - s * 0.04);
+  ctx.bezierCurveTo(s * 0.16, calyxY - s * 0.25, s * 0.3, calyxY - s * 0.28, s * 0.2, calyxY - s * 0.42);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/**
+ * 🍑 Peach. Caller sets ctx.fillStyle.
+ * Two-lobed shape with a vertical cleft, gradient blush,
+ * a short brown stem, and a small green leaf.
+ */
+export function drawPeach(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  s: number
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // two round lobes (plain circles so they read as genuinely spherical)
+  ctx.beginPath();
+  ctx.arc(-s * 0.22, s * 0.06, s * 0.44, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc( s * 0.22, s * 0.06, s * 0.44, 0, Math.PI * 2);
+  ctx.fill();
+
+  // blush gradient on lower half
+  ctx.save();
+  const blush = ctx.createRadialGradient(0, s * 0.3, 0, 0, s * 0.3, s * 0.5);
+  blush.addColorStop(0, "rgba(220, 50, 30, 0.3)");
+  blush.addColorStop(1, "rgba(220, 50, 30, 0)");
+  ctx.fillStyle = blush;
+  ctx.beginPath();
+  ctx.arc(0, s * 0.2, s * 0.55, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // highlight
+  ctx.save();
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.ellipse(-s * 0.2, -s * 0.15, s * 0.1, s * 0.18, -0.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // vertical cleft — deep and prominent, top to bottom of the fruit
+  ctx.strokeStyle = "rgba(140, 40, 10, 0.5)";
+  ctx.lineWidth = Math.max(2, s * 0.08);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.38);
+  ctx.bezierCurveTo(s * 0.05, -s * 0.1, s * 0.05, s * 0.22, 0, s * 0.48);
+  ctx.stroke();
+
+  // stem — brown, short
+  ctx.strokeStyle = "#6b4226";
+  ctx.lineWidth = Math.max(1.5, s * 0.08);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(0, -s * 0.45);
+  ctx.bezierCurveTo(-s * 0.02, -s * 0.6, s * 0.05, -s * 0.72, s * 0.02, -s * 0.8);
+  ctx.stroke();
+
+  // leaf
+  ctx.fillStyle = "#4a8a20";
+  ctx.save();
+  ctx.translate(s * 0.1, -s * 0.65);
+  ctx.rotate(0.5);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.bezierCurveTo(s * 0.08, -s * 0.08, s * 0.2, -s * 0.06, s * 0.22, 0);
+  ctx.bezierCurveTo(s * 0.2, s * 0.06, s * 0.08, s * 0.08, 0, 0);
+  ctx.closePath();
+  ctx.fill();
+  // leaf vein
+  ctx.strokeStyle = "rgba(30, 80, 10, 0.4)";
+  ctx.lineWidth = Math.max(0.5, s * 0.02);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(s * 0.18, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.restore();
+}
+
+/**
+ * 💦 Three water drops. Caller sets ctx.fillStyle.
+ * Teardrop shapes with highlights, arranged in the classic
+ * three-drop splash pattern (large right, medium upper-left, small left).
+ */
+export function drawDrops(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  s: number
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  function drop(dx: number, dy: number, ds: number, angle: number) {
+    ctx.save();
+    ctx.translate(dx, dy);
+    ctx.rotate(angle);
+
+    // drop shape — pointed top, rounded bottom
+    ctx.beginPath();
+    ctx.moveTo(0, -ds);
+    ctx.bezierCurveTo(ds * 0.08, -ds * 0.75, ds * 0.55, -ds * 0.2, ds * 0.5, ds * 0.2);
+    ctx.bezierCurveTo(ds * 0.45, ds * 0.55, ds * 0.25, ds * 0.7, 0, ds * 0.7);
+    ctx.bezierCurveTo(-ds * 0.25, ds * 0.7, -ds * 0.45, ds * 0.55, -ds * 0.5, ds * 0.2);
+    ctx.bezierCurveTo(-ds * 0.55, -ds * 0.2, -ds * 0.08, -ds * 0.75, 0, -ds);
+    ctx.closePath();
+    ctx.fill();
+
+    // inner highlight — gives the glassy water look
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.ellipse(-ds * 0.12, -ds * 0.15, ds * 0.08, ds * 0.2, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // small specular dot
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath();
+    ctx.arc(-ds * 0.1, -ds * 0.35, ds * 0.06, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  drop(s * 0.2, s * 0.1, s * 0.42, 0.22);    // large, slight right tilt
+  drop(-s * 0.18, -s * 0.24, s * 0.28, -0.18); // medium, upper-left
+  drop(-s * 0.44, s * 0.04, s * 0.18, -0.1);   // small, left
+
+  ctx.restore();
+}
+
+/**
+ * Renders any emoji character centered at (cx, cy) at the given size.
+ * Use this instead of writing a custom canvas graphic — the emoji looks
+ * exactly like the system emoji by definition.
+ *
+ * To add a new "object" to a theme background or win celebration:
+ *   drawEmoji(ctx, x, y, size, "🦄")  // that's it
+ */
+export function drawEmoji(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  s: number,
+  emoji: string
+) {
+  ctx.save();
+  ctx.font = `${Math.round(s * 1.6)}px sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(emoji, cx, cy);
+  ctx.restore();
+}
+
+/** Setup a canvas to fill the viewport at device pixel ratio for crisp rendering.
+ *  Applies a DPR scale transform so all drawing coordinates stay in CSS pixels.
  *  Returns a cleanup function. */
 export function setupFullscreenCanvas(
   canvas: HTMLCanvasElement
 ): () => void {
   const resize = () => {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const dpr = window.devicePixelRatio || 1;
+    const w   = window.innerWidth;
+    const h   = window.innerHeight;
+    canvas.width  = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    canvas.style.width  = `${w}px`;
+    canvas.style.height = `${h}px`;
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
   resize();
   window.addEventListener("resize", resize);

@@ -38,7 +38,7 @@ h1 {
   font-weight: 800;
   letter-spacing: 2px;
   margin-bottom: 4px;
-  background: linear-gradient(90deg, #ff3366, #ff8c00, #ffe600, #00e676, #00b4ff, #9c27b0, #ff3366);
+  background: var(--title-gradient);
   background-size: 300% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -145,10 +145,10 @@ h1 {
 .share-results-btn {
   margin-top: 12px;
   padding: 12px 24px;
-  background: linear-gradient(90deg, #ff3366, #ff8c00, #ffe600, #00e676, #00b4ff, #9c27b0, #ff3366);
+  background: var(--title-gradient);
   background-size: 300% auto;
   animation: rainbow-shift 3s linear infinite;
-  color: var(--color-text);
+  color: #fff;
   border: none;
   border-radius: 8px;
   font-weight: 700;

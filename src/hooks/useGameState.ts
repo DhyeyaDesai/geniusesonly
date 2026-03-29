@@ -18,9 +18,14 @@ export function useGameState(answer: string) {
 
   useEffect(() => {
     if (!won) return;
-    const timer = setTimeout(() => setShowWinBounce(true), 900);
+    // Wait until the last tile's flip animation finishes before starting win bounce/celebration.
+    // Last tile starts flipping at (wordLen-1)*0.3s after guess submit, flip takes 0.5s.
+    // won is set revealDelay=(wordLen*150+500)ms after submit.
+    // So delay needed after won = max(300, wordLen*150 - 200) ms.
+    const delay = Math.max(300, wordLen * 150 - 200);
+    const timer = setTimeout(() => setShowWinBounce(true), delay);
     return () => clearTimeout(timer);
-  }, [won]);
+  }, [won, wordLen]);
 
   const showMessage = useCallback((msg: string, duration = 1500) => {
     setMessage(msg);

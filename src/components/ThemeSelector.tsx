@@ -8,15 +8,6 @@ type Props = {
 export function ThemeSelector({ selected, onChange }: Props) {
   return (
     <div style={{ width: "100%", maxWidth: 340 }}>
-      <p style={{
-        fontSize: 12,
-        color: "var(--color-subtle)",
-        margin: "0 0 8px",
-        textTransform: "uppercase",
-        letterSpacing: "0.08em",
-      }}>
-        Theme
-      </p>
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(5, 1fr)",

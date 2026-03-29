@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useTheme } from "../theme/ThemeContext";
-import { heartPath, strokeSnowflake, fillStar, drawBat, setupFullscreenCanvas } from "../utils/canvas";
+import { heartPath, strokeSnowflake, fillStar, drawBat, drawEggplant, drawPeach, drawDrops, setupFullscreenCanvas } from "../utils/canvas";
 
 type Props = { active: boolean };
 
@@ -168,20 +168,6 @@ function drawNatureWin(ctx: CanvasRenderingContext2D, w: number, h: number, part
   }
 }
 
-/** Royalty: golden sparkle stars */
-function drawRoyaltyWin(ctx: CanvasRenderingContext2D, w: number, h: number, particles: Particle[], spawn: () => void) {
-  ctx.clearRect(0, 0, w, h);
-  if (Math.random() < 0.1) spawn();
-  updateParticles(particles, 0.04);
-  for (const p of particles) {
-    const alpha = 1 - p.life / p.maxLife;
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = `hsla(${p.hue},100%,65%,${alpha})`;
-    ctx.fillStyle = `hsla(${p.hue},100%,65%,${alpha})`;
-    fillStar(ctx, p.x, p.y, p.size, p.size * 0.38);
-    ctx.shadowBlur = 0;
-  }
-}
 
 /** Fire: ember fountain */
 function drawFireWin(ctx: CanvasRenderingContext2D, w: number, h: number, particles: Particle[], spawn: () => void) {
@@ -211,6 +197,31 @@ function drawIceWin(ctx: CanvasRenderingContext2D, w: number, h: number, particl
   ctx.globalAlpha = 1;
 }
 
+/** Spicy: shower of 🍆 🍑 💦 */
+function drawSpicyWin(ctx: CanvasRenderingContext2D, w: number, h: number, particles: Particle[], spawn: () => void) {
+  ctx.clearRect(0, 0, w, h);
+  if (Math.random() < 0.18) spawn();
+  updateParticles(particles, 0.12);
+  for (const p of particles) {
+    const alpha = 1 - p.life / p.maxLife;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.extra! + p.life * 0.05);
+    const kind = Math.floor(p.hue / 120) % 3;
+    if (kind === 0) {
+      ctx.fillStyle = `rgba(100,30,160,${alpha})`;
+      drawEggplant(ctx, 0, 0, p.size);
+    } else if (kind === 1) {
+      ctx.fillStyle = `rgba(255,130,70,${alpha})`;
+      drawPeach(ctx, 0, 0, p.size);
+    } else {
+      ctx.fillStyle = `rgba(120,190,255,${alpha * 0.9})`;
+      drawDrops(ctx, 0, 0, p.size);
+    }
+    ctx.restore();
+  }
+}
+
 // ─── hue sets per theme ───────────────────────────────────────────────────────
 
 const WIN_HUES: Record<string, number[]> = {
@@ -220,10 +231,10 @@ const WIN_HUES: Record<string, number[]> = {
   space:   [200, 220, 260, 280],
   ocean:   [185, 195, 200, 210],
   neon:    [150, 290, 300],
-  nature:  [80, 100, 120, 130, 330, 350],
-  royalty: [45, 50, 270, 280],
+  flowers: [300, 320, 340, 80, 100, 200],
   fire:    [0, 15, 30, 40],
   ice:     [195, 205, 215],
+  spicy:   [0, 60, 120, 180, 240, 300],
 };
 
 const WIN_DRAW: Record<string, WinDrawFn> = {
@@ -233,10 +244,10 @@ const WIN_DRAW: Record<string, WinDrawFn> = {
   space:   drawSpaceWin,
   ocean:   drawOceanWin,
   neon:    drawNeonWin,
-  nature:  drawNatureWin,
-  royalty: drawRoyaltyWin,
+  flowers: drawNatureWin,
   fire:    drawFireWin,
   ice:     drawIceWin,
+  spicy:   drawSpicyWin,
 };
 
 // ─── component ────────────────────────────────────────────────────────────────
@@ -269,8 +280,11 @@ export function ThemeWin({ active }: Props) {
     const hues   = WIN_HUES[theme.id] ?? WIN_HUES.rainbow;
     const drawFn = WIN_DRAW[theme.id] ?? drawRainbowWin;
 
+    const cssW = () => canvas.width / (window.devicePixelRatio || 1);
+    const cssH = () => canvas.height / (window.devicePixelRatio || 1);
+
     const spawn = () => {
-      const newParticles = burst(canvas.width, canvas.height, hues, 8, 1);
+      const newParticles = burst(cssW(), cssH(), hues, 8, 1);
       particles.current.push(...newParticles);
     };
 
@@ -278,7 +292,7 @@ export function ThemeWin({ active }: Props) {
     for (let i = 0; i < 4; i++) spawn();
 
     function loop() {
-      drawFn(ctx!, canvas!.width, canvas!.height, particles.current, spawn);
+      drawFn(ctx!, cssW(), cssH(), particles.current, spawn);
       rafRef.current = requestAnimationFrame(loop);
     }
     rafRef.current = requestAnimationFrame(loop);

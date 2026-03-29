@@ -49,9 +49,15 @@ export function PlayView({ answer }: Props) {
   return (
     <>
       <ThemeBackground />
-      <ThemeWin active={won} />
+      <ThemeWin active={showWinBounce} />
       <div className="container" style={{ position: "relative", zIndex: 1 }}>
-        <h1>GENIUSES ONLY</h1>
+        <h1
+          onClick={() => { window.location.href = window.location.pathname; }}
+          style={{ cursor: "pointer" }}
+          title="Create a puzzle"
+        >
+          GENIUSES ONLY
+        </h1>
         <p className="subtitle">{wordLen} letters · {MAX_GUESSES} guesses</p>
 
         {(message || easterMsg) && (

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { encode } from "../utils/codec";
 import { validateWord } from "../utils/wordValidator";
-import { RAINBOW_GRADIENT } from "../theme/maps";
 import { ThemeProvider } from "../theme/ThemeContext";
 import { ThemeSelector } from "./ThemeSelector";
 import { ThemeBackground } from "./ThemeBackground";
@@ -70,7 +69,11 @@ export function CreatorView() {
             onClick={handleCreate}
             disabled={validating || !word.trim()}
             className="creator-btn"
-            style={{ background: validating ? "var(--color-absent)" : RAINBOW_GRADIENT }}
+            style={{
+              background: validating ? "var(--color-absent)" : "var(--title-gradient)",
+              backgroundSize: "300% auto",
+              animation: validating ? "none" : "rainbow-shift 3s linear infinite",
+            }}
           >
             {validating ? "Checking..." : "Create Puzzle"}
           </button>
@@ -91,7 +94,11 @@ export function CreatorView() {
                 <button
                   onClick={handleCopy}
                   className="copy-btn"
-                  style={{ background: copied ? "var(--color-correct)" : RAINBOW_GRADIENT }}
+                  style={{
+                    background: copied ? "var(--color-correct)" : "var(--title-gradient)",
+                    backgroundSize: "300% auto",
+                    animation: copied ? "none" : "rainbow-shift 3s linear infinite",
+                  }}
                 >
                   {copied ? "Copied!" : "Copy"}
                 </button>

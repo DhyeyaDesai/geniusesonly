@@ -3,8 +3,8 @@ import { useTheme } from "../theme/ThemeContext";
 import {
   heartPath,
   strokeSnowflake,
-  fillStar,
   drawBat,
+  drawEmoji,
   setupFullscreenCanvas,
 } from "../utils/canvas";
 
@@ -23,20 +23,127 @@ type DrawFn = (
   t: number
 ) => void;
 
-/** Rainbow: pulsing stars */
+/**
+ * Rainbow: four layered live effects
+ *   1. Drifting colour orbs  — large glowing blobs swimming around
+ *   2. Prismatic light beams — diagonal shafts slowly sweeping left/right
+ *   3. Three breathing arcs  — left / centre / right, each pulsing at its own pace
+ *   4. Twinkling sparkles    — 4-armed cross stars that blaze on and off
+ */
+type RainbowOrb = { x: number; y: number; vx: number; vy: number; r: number; hue: number; phase: number };
+let rainbowOrbs: RainbowOrb[] = [];
+
+const ARC_COLORS  = ["#ff2255","#ff8800","#ffee00","#00dd66","#0099ff","#9933ff"];
+const ARC_DEFS    = [
+  { cxF: 0.16, cyF: 1.15, scale: 0.52, phase: 0.0 },
+  { cxF: 0.50, cyF: 1.35, scale: 1.05, phase: 2.1 }, // large centre arc — endpoints pushed well below screen
+  { cxF: 0.84, cyF: 1.15, scale: 0.50, phase: 4.2 },
+];
+
 function drawRainbow(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  if (rainbowOrbs.length === 0) {
+    rainbowOrbs = Array.from({ length: 13 }, (_, i) => ({
+      x: rand(w * 0.05, w * 0.95),
+      y: rand(h * 0.05, h * 0.95),
+      vx: rand(-0.4, 0.4),
+      vy: rand(-0.35, 0.35),
+      r:  rand(90, 210),
+      hue: (i / 13) * 360,
+      phase: rand(0, Math.PI * 2),
+    }));
+  }
+
   ctx.clearRect(0, 0, w, h);
-  const count = 70;
-  for (let i = 0; i < count; i++) {
-    const seedX = ((i * 137.5) % 1) * w;
-    const seedY = ((i * 97.3) % 1) * h;
-    const hue = (i / count) * 360;
-    const pulse = 0.4 + 0.6 * Math.abs(Math.sin(t * 0.8 + i * 0.4));
-    const r = 1 + 2.5 * pulse;
+
+  // ── 1. Drifting glowing colour orbs ──────────────────────────────────────────
+  for (const orb of rainbowOrbs) {
+    orb.x += orb.vx * 0.5 + Math.sin(t * 0.22 + orb.phase) * 0.7;
+    orb.y += orb.vy * 0.5 + Math.cos(t * 0.18 + orb.phase) * 0.55;
+    if (orb.x < -orb.r) orb.x = w + orb.r;
+    if (orb.x > w + orb.r) orb.x = -orb.r;
+    if (orb.y < -orb.r) orb.y = h + orb.r;
+    if (orb.y > h + orb.r) orb.y = -orb.r;
+
+    const hue = (orb.hue + t * 18) % 360;
+    const pr  = orb.r * (0.82 + 0.18 * Math.sin(t * 0.65 + orb.phase));
+    const rg  = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, pr);
+    rg.addColorStop(0,   `hsla(${hue},95%,68%,0.24)`);
+    rg.addColorStop(0.5, `hsla(${hue},90%,62%,0.10)`);
+    rg.addColorStop(1,   `hsla(${hue},90%,62%,0)`);
+    ctx.fillStyle = rg;
+    ctx.fillRect(orb.x - pr, orb.y - pr, pr * 2, pr * 2);
+  }
+
+  // ── 2. Prismatic diagonal light beams ────────────────────────────────────────
+  for (let i = 0; i < 6; i++) {
+    const sweep = Math.sin(t * 0.13 + i * 1.08) * w * 0.13;
+    const bx    = w * (0.08 + i * 0.17) + sweep;
+    const hue   = (i / 6) * 360;
+    const alpha = 0.09 + 0.05 * Math.sin(t * 0.55 + i * 0.9);
+    ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.beginPath();
-    ctx.arc(seedX, seedY, r, 0, Math.PI * 2);
-    ctx.fillStyle = `hsla(${hue},80%,70%,${pulse})`;
+    ctx.moveTo(bx - 36, 0);
+    ctx.lineTo(bx + 36, 0);
+    ctx.lineTo(bx + 110, h);
+    ctx.lineTo(bx + 38,  h);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${hue},95%,65%)`;
     ctx.fill();
+    ctx.restore();
+  }
+
+  // ── 3. Three breathing rainbow arcs ──────────────────────────────────────────
+  const bw = Math.min(w, h) * 0.052;
+  for (const def of ARC_DEFS) {
+    const cx    = w * def.cxF;
+    const cy    = h * def.cyF;
+    const pulse = 0.93 + 0.07 * Math.sin(t * 0.55 + def.phase);
+    const baseR = Math.min(w, h) * def.scale * pulse;
+    for (let i = 0; i < ARC_COLORS.length; i++) {
+      const r = baseR + i * bw;
+      const a = 0.20 + 0.09 * Math.sin(t * 0.42 + def.phase + i * 0.38);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI * 1.07, Math.PI * 1.93);
+      ctx.strokeStyle = ARC_COLORS[i];
+      ctx.lineWidth   = bw * 0.9;
+      ctx.globalAlpha = a;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ── 4. Twinkling 4-arm cross sparkles ────────────────────────────────────────
+  for (let i = 0; i < 80; i++) {
+    const sx  = ((i * 137.508) % 1) * w;
+    const sy  = ((i * 98.561)  % 1) * h;
+    const hue = ((i / 80) * 360 + t * 22) % 360;
+    const p   = 0.1 + 0.9 * Math.pow(Math.abs(Math.sin(t * 1.2 + i * 0.57)), 2.5);
+    const r   = 1.8 + 5.8 * p;
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(t * 0.7 + i * 0.35);
+    ctx.fillStyle = `hsla(${hue},95%,80%,${p * 0.92})`;
+
+    // vertical arm
+    ctx.beginPath();
+    ctx.rect(-r * 0.18, -r * 1.7, r * 0.36, r * 3.4);
+    ctx.fill();
+    // diagonal arm (45°)
+    ctx.rotate(Math.PI / 4);
+    ctx.beginPath();
+    ctx.rect(-r * 0.14, -r * 1.2, r * 0.28, r * 2.4);
+    ctx.fill();
+
+    // bright white core
+    ctx.rotate(-Math.PI / 4);
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${p * 0.75})`;
+    ctx.fill();
+
+    ctx.restore();
   }
 }
 
@@ -223,77 +330,137 @@ function drawNeon(ctx: CanvasRenderingContext2D, w: number, h: number, _t: numbe
   }
 }
 
-/** Nature: fireflies + drifting leaves */
-type Firefly = { x: number; y: number; r: number; phase: number; vx: number; vy: number };
-let fireflies: Firefly[] = [];
-type Leaf = { x: number; y: number; size: number; angle: number; speed: number; spin: number };
-let leaves: Leaf[] = [];
+/**
+ * Flowers: vibrant garden sky — clouds, ☀️ sun, butterflies, and a dense
+ * shower of colourful flowers floating both up and down.
+ */
+const ALL_FLOWER_EMOJIS = ["🌸","🌺","🌼","🌻","🌷","🌹","💐","🪷","🪻","🫧","🌸","🌺","🌼","🌷","🌸","🪷"];
+const CLOUD_EMOJIS      = ["☁️","🌤️","⛅","🌥️"];
+const FRIEND_EMOJIS     = ["🦋","🐝","🦋","✨","🌈","🦋","🐛","🌟"];
 
-function drawNature(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
-  if (fireflies.length === 0) {
-    fireflies = Array.from({ length: 30 }, () => ({
-      x: rand(0, w), y: rand(h * 0.3, h),
-      r: rand(2, 4),
-      phase: rand(0, Math.PI * 2),
-      vx: rand(-0.4, 0.4), vy: rand(-0.3, 0.3),
+type FlowerP = {
+  x: number; y: number; size: number; speed: number;
+  phase: number; rot: number; rotSpeed: number; drift: number;
+  kind: "cloud" | "rise" | "fall" | "friend";
+  emoji: string;
+};
+let flowerParticles: FlowerP[] = [];
+
+function drawFlowers(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  if (flowerParticles.length === 0) {
+    // Clouds: top 30% only — always visible and unobstructed
+    const clouds: FlowerP[] = Array.from({ length: 7 }, (_, i) => ({
+      x: rand(0, w), y: rand(h * 0.02, h * 0.28),
+      size: rand(50, 85), speed: rand(0.08, 0.20),
+      phase: i * 0.9, rot: 0, rotSpeed: 0, drift: 0,
+      kind: "cloud", emoji: CLOUD_EMOJIS[i % CLOUD_EMOJIS.length],
     }));
-    leaves = Array.from({ length: 15 }, () => ({
-      x: rand(0, w), y: rand(0, h),
-      size: rand(10, 22), angle: rand(0, Math.PI * 2),
-      speed: rand(0.4, 1.0), spin: rand(-0.02, 0.02),
+    // Rising flowers: spawn in lower 70%, rise upward but reset before reaching top 30%
+    const rising: FlowerP[] = Array.from({ length: 40 }, (_, i) => ({
+      x: rand(0, w), y: rand(h * 0.30, h),
+      size: rand(14, 30), speed: rand(0.28, 0.85),
+      phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2),
+      rotSpeed: rand(-0.018, 0.018), drift: rand(0.3, 0.9),
+      kind: "rise", emoji: ALL_FLOWER_EMOJIS[i % ALL_FLOWER_EMOJIS.length],
     }));
+    // Falling flowers: enter from top of lower-70% zone, fall to bottom
+    const falling: FlowerP[] = Array.from({ length: 40 }, (_, i) => ({
+      x: rand(0, w), y: rand(h * 0.30, h),
+      size: rand(12, 28), speed: rand(0.3, 0.95),
+      phase: rand(0, Math.PI * 2), rot: rand(0, Math.PI * 2),
+      rotSpeed: rand(-0.014, 0.014), drift: rand(0.2, 0.7),
+      kind: "fall", emoji: ALL_FLOWER_EMOJIS[(i + 5) % ALL_FLOWER_EMOJIS.length],
+    }));
+    // Friends (butterflies/bees): lower 70%, drift in figure-eights
+    const friends: FlowerP[] = Array.from({ length: 20 }, (_, i) => ({
+      x: rand(0, w), y: rand(h * 0.30, h * 0.95),
+      size: rand(18, 30), speed: rand(0.15, 0.5),
+      phase: rand(0, Math.PI * 2), rot: 0, rotSpeed: 0,
+      drift: rand(0.6, 1.8),
+      kind: "friend", emoji: FRIEND_EMOJIS[i % FRIEND_EMOJIS.length],
+    }));
+    flowerParticles = [...clouds, ...rising, ...falling, ...friends];
   }
+
   ctx.clearRect(0, 0, w, h);
-  for (const f of fireflies) {
-    f.x += f.vx + Math.sin(t * 0.5 + f.phase) * 0.3;
-    f.y += f.vy + Math.cos(t * 0.4 + f.phase) * 0.2;
-    if (f.x < 0) f.x = w; if (f.x > w) f.x = 0;
-    if (f.y < h * 0.2) f.y = h; if (f.y > h) f.y = h * 0.2;
-    const glow = 0.3 + 0.7 * Math.abs(Math.sin(t * 1.5 + f.phase));
-    ctx.beginPath();
-    ctx.arc(f.x, f.y, f.r * glow, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(180,255,100,${glow * 0.8})`;
-    ctx.fill();
-  }
-  ctx.fillStyle = "rgba(80,180,40,0.45)";
-  for (const l of leaves) {
-    l.y += l.speed;
-    l.x += Math.sin(t * 0.4 + l.angle) * 0.5;
-    l.angle += l.spin;
-    if (l.y > h + l.size) { l.y = -l.size; l.x = rand(0, w); }
-    ctx.save();
-    ctx.translate(l.x, l.y);
-    ctx.rotate(l.angle);
-    ctx.beginPath();
-    ctx.ellipse(0, 0, l.size * 0.35, l.size * 0.6, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
+
+  // bright sky gradient
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0,    "rgba(100,185,255,0.35)");
+  sky.addColorStop(0.5,  "rgba(160,220,255,0.18)");
+  sky.addColorStop(0.85, "rgba(200,240,200,0.10)");
+  sky.addColorStop(1,    "rgba(255,230,200,0.06)");
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+
+  // ☀️ pulsing glow + sun emoji upper-right
+  const sx = w * 0.86, sy = h * 0.10;
+  const gR  = 65 + 10 * Math.sin(t * 0.65);
+  const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, gR);
+  glow.addColorStop(0,   "rgba(255,250,160,0.38)");
+  glow.addColorStop(0.45,"rgba(255,230,90,0.15)");
+  glow.addColorStop(1,   "transparent");
+  ctx.fillStyle = glow;
+  ctx.fillRect(sx - gR, sy - gR, gR * 2, gR * 2);
+  drawEmoji(ctx, sx, sy, 55, "☀️");
+
+  for (const p of flowerParticles) {
+    if (p.kind === "cloud") {
+      p.x -= p.speed;
+      if (p.x + p.size < 0) { p.x = w + p.size; p.y = rand(h * 0.02, h * 0.32); }
+      const bob = Math.sin(t * 0.38 + p.phase) * 5;
+      ctx.save();
+      ctx.globalAlpha = 0.72 + 0.18 * Math.sin(t * 0.5 + p.phase);
+      drawEmoji(ctx, p.x, p.y + bob, p.size, p.emoji);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+    } else if (p.kind === "rise") {
+      p.y -= p.speed;
+      p.x += Math.sin(t * 0.5 + p.phase) * p.drift;
+      p.rot += p.rotSpeed;
+      // reset at the cloud boundary (30%) so flowers never crowd the sky
+      if (p.y + p.size < h * 0.30) { p.y = h + p.size; p.x = rand(0, w); }
+      const alpha = 0.52 + 0.36 * Math.abs(Math.sin(t * 0.65 + p.phase));
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.globalAlpha = alpha;
+      drawEmoji(ctx, 0, 0, p.size, p.emoji);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+    } else if (p.kind === "fall") {
+      p.y += p.speed;
+      p.x += Math.sin(t * 0.42 + p.phase) * p.drift;
+      p.rot += p.rotSpeed;
+      // wrap back to the 30% boundary so they only occupy lower 70%
+      if (p.y - p.size > h) { p.y = h * 0.30 - p.size; p.x = rand(0, w); }
+      const alpha = 0.52 + 0.35 * Math.abs(Math.sin(t * 0.72 + p.phase));
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot);
+      ctx.globalAlpha = alpha;
+      drawEmoji(ctx, 0, 0, p.size, p.emoji);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+
+    } else {
+      // friends (butterflies/bees) — figure-eight drift
+      p.x += Math.cos(t * 0.55 + p.phase) * p.drift;
+      p.y += Math.sin(t * 1.1  + p.phase) * p.drift * 0.5;
+      if (p.x < -p.size) p.x = w + p.size;
+      if (p.x > w + p.size) p.x = -p.size;
+      // clamp to lower 70% so friends never drift into the cloud zone
+      if (p.y < h * 0.30) p.y = h * 0.30;
+      if (p.y > h) p.y = h * 0.30;
+      ctx.save();
+      ctx.globalAlpha = 0.60 + 0.28 * Math.sin(t * 0.9 + p.phase);
+      drawEmoji(ctx, p.x, p.y, p.size, p.emoji);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
   }
 }
 
-/** Royalty: drifting sparkle stars + golden motes */
-type RoyalStar = { x: number; y: number; outer: number; phase: number; vy: number };
-let royalStars: RoyalStar[] = [];
-
-function drawRoyalty(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
-  if (royalStars.length === 0) {
-    royalStars = Array.from({ length: 25 }, () => ({
-      x: rand(0, w), y: rand(0, h),
-      outer: rand(6, 16),
-      phase: rand(0, Math.PI * 2),
-      vy: rand(-0.4, -0.1),
-    }));
-  }
-  ctx.clearRect(0, 0, w, h);
-  for (const s of royalStars) {
-    s.y += s.vy;
-    if (s.y + s.outer < 0) { s.y = h + s.outer; s.x = rand(0, w); }
-    const glow = 0.4 + 0.6 * Math.abs(Math.sin(t * 1.2 + s.phase));
-    const hue = Math.sin(s.phase) > 0 ? 45 : 270;
-    ctx.fillStyle = `hsla(${hue},100%,65%,${glow * 0.85})`;
-    fillStar(ctx, s.x, s.y, s.outer * glow, s.outer * 0.35 * glow);
-  }
-}
 
 /** Fire: rising embers */
 type Ember = { x: number; y: number; r: number; speed: number; hue: number; phase: number };
@@ -347,6 +514,130 @@ function drawIce(ctx: CanvasRenderingContext2D, w: number, h: number, t: number)
   }
 }
 
+/**
+ * Spicy (NSFW): four layered effects for a late-night club atmosphere
+ *   1. Drifting deep-purple / hot-pink / crimson bokeh orbs
+ *   2. Slow diagonal club-light beams in spicy hues
+ *   3. Rising heat shimmer from the floor
+ *   4. Dense emoji shower (🍆🍑💦👄🍭🍌🍒💋🌹🔥)
+ */
+const SPICY_EMOJIS = ["🍆","🍑","💦","👄","🍭","🍌","🍒","💋","🌹","🔥","🍆","🍑","💦","💋", "🐱", "👅"];
+
+type SpicyOrb = { x: number; y: number; vx: number; vy: number; r: number; hue: number; phase: number };
+let spicyOrbs: SpicyOrb[] = [];
+
+type SpicyP = { x: number; y: number; size: number; speed: number; phase: number; kind: number; rot: number };
+let spicyParticles: SpicyP[] = [];
+
+// hue palette: deep purple, hot pink, crimson, violet, rose
+const SPICY_ORB_HUES = [280, 320, 340, 260, 300, 0, 330, 270];
+
+function drawSpicy(ctx: CanvasRenderingContext2D, w: number, h: number, t: number) {
+  if (spicyOrbs.length === 0) {
+    spicyOrbs = Array.from({ length: 11 }, (_, i) => ({
+      x: rand(0, w), y: rand(0, h),
+      vx: rand(-0.35, 0.35), vy: rand(-0.28, 0.28),
+      r:   rand(80, 200),
+      hue: SPICY_ORB_HUES[i % SPICY_ORB_HUES.length],
+      phase: rand(0, Math.PI * 2),
+    }));
+  }
+  if (spicyParticles.length === 0) {
+    spicyParticles = Array.from({ length: 100 }, () => ({
+      x: rand(0, w), y: rand(0, h),
+      size: rand(14, 34),
+      speed: rand(0.22, 0.70),
+      phase: rand(0, Math.PI * 2),
+      kind: Math.floor(rand(0, SPICY_EMOJIS.length)),
+      rot: rand(-0.25, 0.25),
+    }));
+  }
+
+  ctx.clearRect(0, 0, w, h);
+
+  // ── 1. Glowing bokeh orbs — the main atmosphere setter ───────────────────────
+  for (const orb of spicyOrbs) {
+    orb.x += orb.vx * 0.45 + Math.sin(t * 0.18 + orb.phase) * 0.55;
+    orb.y += orb.vy * 0.45 + Math.cos(t * 0.14 + orb.phase) * 0.42;
+    if (orb.x < -orb.r) orb.x = w + orb.r;
+    if (orb.x > w + orb.r) orb.x = -orb.r;
+    if (orb.y < -orb.r) orb.y = h + orb.r;
+    if (orb.y > h + orb.r) orb.y = -orb.r;
+
+    const hue = (orb.hue + t * 6) % 360;
+    const pr  = orb.r * (0.84 + 0.16 * Math.sin(t * 0.58 + orb.phase));
+    const rg  = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, pr);
+    rg.addColorStop(0,   `hsla(${hue},95%,52%,0.22)`);
+    rg.addColorStop(0.45,`hsla(${hue},88%,42%,0.09)`);
+    rg.addColorStop(1,   `hsla(${hue},88%,42%,0)`);
+    ctx.fillStyle = rg;
+    ctx.fillRect(orb.x - pr, orb.y - pr, pr * 2, pr * 2);
+  }
+
+  // ── 2. Flowing neon sine-wave ribbons ────────────────────────────────────────
+  // Each ribbon is a sinusoidal path drawn with three layered strokes:
+  //   wide+dim outer glow → medium mid-glow → thin bright core
+  // giving a "neon tube" look that bends and flows across the screen.
+  const RIBBON_HUES = [295, 330, 0, 270, 315];
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (let i = 0; i < 5; i++) {
+    const hue   = (RIBBON_HUES[i] + t * 9) % 360;
+    // ribbon centre Y drifts slowly up and down
+    const yC    = h * (0.12 + i * 0.19) + Math.sin(t * 0.20 + i * 1.25) * h * 0.07;
+    const amp   = 24 + 14 * Math.sin(t * 0.32 + i * 0.65);
+    const freq  = (1.4 + i * 0.38) * Math.PI * 2 / w;
+    const phase = t * (0.55 + i * 0.13);
+
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 2) {
+      const y = yC + amp * Math.sin(x * freq + phase);
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+
+    // outer glow
+    ctx.strokeStyle = `hsla(${hue},90%,58%,0.07)`;
+    ctx.lineWidth   = 22;
+    ctx.stroke();
+    // mid glow
+    ctx.strokeStyle = `hsla(${hue},95%,68%,0.14)`;
+    ctx.lineWidth   = 8;
+    ctx.stroke();
+    // bright core
+    ctx.strokeStyle = `hsla(${hue},100%,82%,0.28)`;
+    ctx.lineWidth   = 2;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── 3. Heat shimmer columns rising from the floor ────────────────────────────
+  for (let i = 0; i < 6; i++) {
+    const hx = (w / 6) * i + Math.sin(t * 0.55 + i) * 20;
+    const lg = ctx.createLinearGradient(hx, h, hx, h * 0.45);
+    lg.addColorStop(0, "rgba(180,10,80,0.11)");
+    lg.addColorStop(0.5,"rgba(120,0,180,0.05)");
+    lg.addColorStop(1, "transparent");
+    ctx.fillStyle = lg;
+    ctx.fillRect(hx - 40, h * 0.45, 80, h * 0.55);
+  }
+
+  // ── 4. Emoji shower ───────────────────────────────────────────────────────────
+  for (const p of spicyParticles) {
+    p.y -= p.speed;
+    p.x += Math.sin(t * 0.4 + p.phase) * 0.45;
+    if (p.y + p.size < 0) { p.y = h + p.size; p.x = rand(0, w); }
+    const alpha = 0.52 + 0.34 * Math.abs(Math.sin(t * 0.88 + p.phase));
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.globalAlpha = alpha;
+    drawEmoji(ctx, 0, 0, p.size, SPICY_EMOJIS[p.kind]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+}
+
 // ─── component ────────────────────────────────────────────────────────────────
 
 const DRAW_MAP: Record<string, DrawFn> = {
@@ -356,10 +647,11 @@ const DRAW_MAP: Record<string, DrawFn> = {
   space:   drawSpace,
   ocean:   drawOcean,
   neon:    drawNeon,
-  nature:  drawNature,
-  royalty: drawRoyalty,
+  flowers: drawFlowers,
+
   fire:    drawFire,
   ice:     drawIce,
+  spicy:   drawSpicy,
 };
 
 export function ThemeBackground() {
@@ -369,16 +661,18 @@ export function ThemeBackground() {
 
   useEffect(() => {
     // Reset per-theme particle state when theme changes
-    loveParticles  = [];
-    batParticles   = [];
-    spaceStars     = [];
-    bubbles        = [];
-    neonSparks     = [];
-    fireflies      = [];
-    leaves         = [];
-    royalStars     = [];
-    embers         = [];
-    snowflakes     = [];
+    rainbowOrbs     = [];
+    loveParticles   = [];
+    batParticles    = [];
+    spaceStars      = [];
+    bubbles         = [];
+    neonSparks      = [];
+    flowerParticles = [];
+
+    embers          = [];
+    snowflakes      = [];
+    spicyOrbs       = [];
+    spicyParticles  = [];
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -390,8 +684,9 @@ export function ThemeBackground() {
     const start   = performance.now();
 
     function loop() {
-      const t = (performance.now() - start) / 1000;
-      drawFn(ctx!, canvas!.width, canvas!.height, t);
+      const t   = (performance.now() - start) / 1000;
+      const dpr = window.devicePixelRatio || 1;
+      drawFn(ctx!, canvas!.width / dpr, canvas!.height / dpr, t);
       rafRef.current = requestAnimationFrame(loop);
     }
     rafRef.current = requestAnimationFrame(loop);

@@ -1,14 +1,14 @@
 export type ThemeId =
+  | "flowers"
   | "rainbow"
   | "love"
   | "scary"
   | "space"
   | "ocean"
   | "neon"
-  | "nature"
-  | "royalty"
   | "fire"
-  | "ice";
+  | "ice"
+  | "spicy";
 
 export type Theme = {
   id: ThemeId;
@@ -30,8 +30,10 @@ export type Theme = {
     "--shadow-correct": string;
     "--shadow-present": string;
     "--shadow-absent": string;
+    /** Gradient used for the title, buttons, and accents */
+    "--title-gradient": string;
   };
-  /** Per-key background for unused keyboard keys (hue-spread array aligned to ALL_KEYS order) */
+  /** Per-key background for unused keyboard keys */
   keyHue: (keyIndex: number, total: number) => string;
   /** Secret word that triggers the easter egg */
   easterEgg: string;
@@ -39,6 +41,32 @@ export type Theme = {
 };
 
 const THEMES: Record<ThemeId, Theme> = {
+  flowers: {
+    id: "flowers",
+    name: "Flowers",
+    emoji: "🌸",
+    tagline: "Petals in the wind",
+    vars: {
+      "--color-bg":           "#0a3a6a",
+      "--color-text":         "#ffe8f5",
+      "--color-subtle":       "#cc88bb",
+      "--color-border-empty": "#1a1040",
+      "--color-border-filled":"#dd66bb",
+      "--color-correct":      "#ff44aa",
+      "--color-present":      "#ffbb44",
+      "--color-absent":       "#4a1a60",
+      "--color-error":        "#ff4466",
+      "--color-key-bg":       "#1a0a30",
+      "--shadow-correct":     "0 0 18px rgba(255,68,170,0.85)",
+      "--shadow-present":     "0 0 16px rgba(255,187,68,0.80)",
+      "--shadow-absent":      "0 0 10px rgba(74,26,96,0.55)",
+      "--title-gradient":     "linear-gradient(90deg,#ff44aa,#ffbb44,#ff88cc,#aa44ff,#ff44aa,#ffbb44,#ff44aa)",
+    },
+    keyHue: (i: number, n: number) => `hsl(${300 + Math.round((i / (n - 1)) * 60)},70%,28%)`,
+    easterEgg: "bloom",
+    easterEggLabel: "🌸 The garden blooms!",
+  },
+
   rainbow: {
     id: "rainbow",
     name: "Rainbow",
@@ -58,6 +86,7 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 16px rgba(34,197,94,0.8)",
       "--shadow-present":     "0 0 16px rgba(245,158,11,0.8)",
       "--shadow-absent":      "0 0 12px rgba(139,92,246,0.6)",
+      "--title-gradient":     "linear-gradient(90deg,#ff3366,#ff8c00,#ffe600,#00e676,#00b4ff,#9c27b0,#ff3366)",
     },
     keyHue: (i, n) => `hsl(${Math.round((i / (n - 1)) * 300)},70%,35%)`,
     easterEgg: "color",
@@ -83,6 +112,7 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 18px rgba(255,26,110,0.85)",
       "--shadow-present":     "0 0 16px rgba(255,143,171,0.7)",
       "--shadow-absent":      "0 0 12px rgba(160,48,96,0.6)",
+      "--title-gradient":     "linear-gradient(90deg,#ff1a6e,#ff4488,#ff8fab,#ff4488,#ff1a6e,#ff4488,#ff1a6e)",
     },
     keyHue: (i, n) => `hsl(${330 + Math.round((i / (n - 1)) * 30)},75%,32%)`,
     easterEgg: "heart",
@@ -108,6 +138,7 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 18px rgba(255,102,0,0.85)",
       "--shadow-present":     "0 0 16px rgba(204,0,204,0.7)",
       "--shadow-absent":      "0 0 10px rgba(51,68,0,0.5)",
+      "--title-gradient":     "linear-gradient(90deg,#ff6600,#cc00cc,#ff3300,#cc00cc,#ff6600,#cc00cc,#ff6600)",
     },
     keyHue: (i, n) => {
       const t = i / (n - 1);
@@ -138,6 +169,7 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 20px rgba(0,200,255,0.85)",
       "--shadow-present":     "0 0 18px rgba(170,68,255,0.8)",
       "--shadow-absent":      "0 0 12px rgba(34,68,136,0.6)",
+      "--title-gradient":     "linear-gradient(90deg,#00c8ff,#aa44ff,#00c8ff,#aa44ff,#00c8ff,#aa44ff,#00c8ff)",
     },
     keyHue: (i, n) => `hsl(${210 + Math.round((i / (n - 1)) * 60)},65%,30%)`,
     easterEgg: "stars",
@@ -163,6 +195,7 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 18px rgba(0,212,170,0.85)",
       "--shadow-present":     "0 0 18px rgba(0,153,255,0.8)",
       "--shadow-absent":      "0 0 12px rgba(0,68,102,0.5)",
+      "--title-gradient":     "linear-gradient(90deg,#00d4aa,#0099ff,#00d4aa,#0099ff,#00d4aa,#0099ff,#00d4aa)",
     },
     keyHue: (i, n) => `hsl(${185 + Math.round((i / (n - 1)) * 40)},70%,28%)`,
     easterEgg: "whale",
@@ -188,6 +221,7 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 20px rgba(0,255,136,0.9)",
       "--shadow-present":     "0 0 20px rgba(255,0,204,0.9)",
       "--shadow-absent":      "0 0 14px rgba(68,0,170,0.65)",
+      "--title-gradient":     "linear-gradient(90deg,#00ff88,#ff00cc,#00ff88,#ff00cc,#00ff88,#ff00cc,#00ff88)",
     },
     keyHue: (i, _n) => {
       const hue = i % 2 === 0 ? 290 : 150;
@@ -197,60 +231,6 @@ const THEMES: Record<ThemeId, Theme> = {
     easterEggLabel: "🤖 Welcome to the grid!",
   },
 
-  nature: {
-    id: "nature",
-    name: "Nature",
-    emoji: "🌿",
-    tagline: "Back to earth",
-    vars: {
-      "--color-bg":           "#010d02",
-      "--color-text":         "#c8f0c0",
-      "--color-subtle":       "#4a8840",
-      "--color-border-empty": "#0d2008",
-      "--color-border-filled":"#3a6630",
-      "--color-correct":      "#44cc44",
-      "--color-present":      "#aacc00",
-      "--color-absent":       "#2a4a20",
-      "--color-error":        "#ff6633",
-      "--color-key-bg":       "#0a1a06",
-      "--shadow-correct":     "0 0 18px rgba(68,204,68,0.8)",
-      "--shadow-present":     "0 0 16px rgba(170,204,0,0.75)",
-      "--shadow-absent":      "0 0 10px rgba(42,74,32,0.5)",
-    },
-    keyHue: (i, n) => `hsl(${100 + Math.round((i / (n - 1)) * 40)},65%,28%)`,
-    easterEgg: "bloom",
-    easterEggLabel: "🌸 A flower blooms!",
-  },
-
-  royalty: {
-    id: "royalty",
-    name: "Royalty",
-    emoji: "👑",
-    tagline: "Fit for a king",
-    vars: {
-      "--color-bg":           "#08000f",
-      "--color-text":         "#ffd700",
-      "--color-subtle":       "#886600",
-      "--color-border-empty": "#1a0030",
-      "--color-border-filled":"#8800cc",
-      "--color-correct":      "#ffd700",
-      "--color-present":      "#cc00ff",
-      "--color-absent":       "#440066",
-      "--color-error":        "#ff4444",
-      "--color-key-bg":       "#120020",
-      "--shadow-correct":     "0 0 20px rgba(255,215,0,0.9)",
-      "--shadow-present":     "0 0 18px rgba(204,0,255,0.85)",
-      "--shadow-absent":      "0 0 12px rgba(68,0,102,0.6)",
-    },
-    keyHue: (i, n) => {
-      const t = i / (n - 1);
-      return t < 0.5
-        ? `hsl(${270 + Math.round(t * 2 * 20)},75%,30%)`
-        : `hsl(${45 + Math.round((t - 0.5) * 2 * 10)},80%,30%)`;
-    },
-    easterEgg: "crown",
-    easterEggLabel: "👑 All hail the champion!",
-  },
 
   fire: {
     id: "fire",
@@ -271,6 +251,7 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 20px rgba(255,136,0,0.9)",
       "--shadow-present":     "0 0 18px rgba(255,51,0,0.85)",
       "--shadow-absent":      "0 0 10px rgba(68,17,0,0.5)",
+      "--title-gradient":     "linear-gradient(90deg,#ff1100,#ff8800,#ffe600,#ff8800,#ff1100,#ff8800,#ff1100)",
     },
     keyHue: (i, n) => `hsl(${Math.round((i / (n - 1)) * 40)},85%,30%)`,
     easterEgg: "blaze",
@@ -296,16 +277,48 @@ const THEMES: Record<ThemeId, Theme> = {
       "--shadow-correct":     "0 0 20px rgba(136,221,255,0.85)",
       "--shadow-present":     "0 0 18px rgba(170,204,255,0.8)",
       "--shadow-absent":      "0 0 12px rgba(26,58,85,0.5)",
+      "--title-gradient":     "linear-gradient(90deg,#88ddff,#d0f4ff,#aaccff,#d0f4ff,#88ddff,#d0f4ff,#88ddff)",
     },
     keyHue: (i, n) => `hsl(${195 + Math.round((i / (n - 1)) * 30)},60%,28%)`,
     easterEgg: "frost",
     easterEggLabel: "❄️ Frozen in time!",
   },
+
+  spicy: {
+    id: "spicy",
+    name: "Spicy",
+    emoji: "🍆",
+    tagline: "18+ only 🔞",
+    vars: {
+      "--color-bg":           "#1a0428",
+      "--color-text":         "#ffddcc",
+      "--color-subtle":       "#aa5533",
+      "--color-border-empty": "#2a0040",
+      "--color-border-filled":"#8800cc",
+      "--color-correct":      "#cc2255",
+      "--color-present":      "#ff9944",
+      "--color-absent":       "#4a1060",
+      "--color-error":        "#ff1133",
+      "--color-key-bg":       "#180028",
+      "--shadow-correct":     "0 0 20px rgba(204,34,85,0.9)",
+      "--shadow-present":     "0 0 18px rgba(255,153,68,0.85)",
+      "--shadow-absent":      "0 0 12px rgba(74,16,96,0.6)",
+      "--title-gradient":     "linear-gradient(90deg,#6600cc,#cc0044,#ff8833,#cc0044,#6600cc,#cc0044,#6600cc)",
+    },
+    keyHue: (i, n) => {
+      const t = i / (n - 1);
+      return t < 0.5
+        ? `hsl(${270 + Math.round(t * 2 * 30)},70%,28%)`
+        : `hsl(${20 + Math.round((t - 0.5) * 2 * 20)},75%,28%)`;
+    },
+    easterEgg: "naked",
+    easterEggLabel: "🍑 Oh my! Nothing to hide!",
+  },
 };
 
 export { THEMES };
 export const THEME_LIST = Object.values(THEMES);
-export const DEFAULT_THEME_ID: ThemeId = "rainbow";
+export const DEFAULT_THEME_ID: ThemeId = "flowers";
 
 export function getTheme(id: string | null | undefined): Theme {
   if (id && id in THEMES) return THEMES[id as ThemeId];

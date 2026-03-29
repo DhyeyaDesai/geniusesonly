@@ -1,7 +1,11 @@
+import { useState, useCallback } from "react";
 import { MAX_GUESSES } from "../constants/game";
 import { useGameState } from "../hooks/useGameState";
 import { useKeyHandler } from "../hooks/useKeyHandler";
-import { Fireworks } from "./Fireworks";
+import { useEasterEgg } from "../hooks/useEasterEgg";
+import { useTheme } from "../theme/ThemeContext";
+import { ThemeBackground } from "./ThemeBackground";
+import { ThemeWin } from "./ThemeWin";
 import { TileRow } from "./TileRow";
 import { Keyboard } from "./Keyboard";
 
@@ -9,6 +13,7 @@ type Props = { answer: string };
 
 export function PlayView({ answer }: Props) {
   const wordLen = answer.length;
+  const theme   = useTheme();
   const {
     guesses,
     currentGuess,
@@ -23,6 +28,14 @@ export function PlayView({ answer }: Props) {
     shareResults,
   } = useGameState(answer);
 
+  const [easterMsg, setEasterMsg] = useState("");
+
+  const triggerEasterEgg = useCallback(() => {
+    setEasterMsg(theme.easterEggLabel);
+    setTimeout(() => setEasterMsg(""), 3500);
+  }, [theme.easterEggLabel]);
+
+  useEasterEgg(theme.easterEgg, triggerEasterEgg);
   useKeyHandler(handleKey);
 
   const rows = Array.from({ length: MAX_GUESSES }, (_, i) => {
@@ -35,12 +48,15 @@ export function PlayView({ answer }: Props) {
 
   return (
     <>
-      <Fireworks active={won} />
+      <ThemeBackground />
+      <ThemeWin active={won} />
       <div className="container" style={{ position: "relative", zIndex: 1 }}>
         <h1>GENIUSES ONLY</h1>
         <p className="subtitle">{wordLen} letters · {MAX_GUESSES} guesses</p>
 
-        {message && <div className="toast">{message}</div>}
+        {(message || easterMsg) && (
+          <div className="toast">{easterMsg || message}</div>
+        )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 8 }}>
           {rows}

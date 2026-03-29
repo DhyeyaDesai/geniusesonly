@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { KEYBOARD_ROWS } from "../constants/game";
 import { colorMap } from "../theme/maps";
-import { rainbowKeyBg } from "../theme/rainbowKeys";
+import { useTheme } from "../theme/ThemeContext";
+import { buildKeyColors } from "../theme/keyColors";
 import type { TileColor } from "../utils/tileColors";
 
 type Props = {
@@ -10,6 +11,8 @@ type Props = {
 };
 
 export function Keyboard({ usedLetters, onKey }: Props) {
+  const theme = useTheme();
+  const keyBg = useMemo(() => buildKeyColors(theme), [theme]);
   const [pressedKey, setPressedKey] = useState<string | null>(null);
 
   const handlePress = (key: string) => {
@@ -24,7 +27,7 @@ export function Keyboard({ usedLetters, onKey }: Props) {
         <div key={ri} style={{ display: "flex", gap: 5 }}>
           {row.map((key) => {
             const status = usedLetters[key];
-            const background = status ? colorMap[status] : (rainbowKeyBg[key] ?? "var(--color-key-bg)");
+            const background = status ? colorMap[status] : (keyBg[key] ?? "var(--color-key-bg)");
             const isPressed = pressedKey === key;
 
             return (

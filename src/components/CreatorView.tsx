@@ -2,6 +2,10 @@ import { useState } from "react";
 import { encode } from "../utils/codec";
 import { validateWord } from "../utils/wordValidator";
 import { RAINBOW_GRADIENT } from "../theme/maps";
+import { ThemeProvider } from "../theme/ThemeContext";
+import { ThemeSelector } from "./ThemeSelector";
+import { ThemeBackground } from "./ThemeBackground";
+import { DEFAULT_THEME_ID, type ThemeId } from "../theme/themes";
 
 export function CreatorView() {
   const [word, setWord] = useState("");
@@ -9,6 +13,7 @@ export function CreatorView() {
   const [error, setError] = useState("");
   const [shareLink, setShareLink] = useState("");
   const [copied, setCopied] = useState(false);
+  const [themeId, setThemeId] = useState<ThemeId>(DEFAULT_THEME_ID);
 
   const handleCreate = async () => {
     const w = word.trim().toLowerCase();
@@ -23,7 +28,7 @@ export function CreatorView() {
     if (!valid) { setError("Not a valid English word."); return; }
 
     const base = window.location.origin + window.location.pathname;
-    setShareLink(`${base}?h=${encode(w)}`);
+    setShareLink(`${base}?h=${encode(w)}&t=${themeId}`);
   };
 
   const handleWordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,53 +43,63 @@ export function CreatorView() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleThemeChange = (id: ThemeId) => {
+    setThemeId(id);
+    setShareLink("");
+  };
+
   return (
-    <div className="container" style={{ position: "relative", zIndex: 1 }}>
-      <h1>GENIUSES ONLY</h1>
-      <p className="subtitle">Create a wordle puzzle for your friends</p>
+    <ThemeProvider themeId={themeId}>
+      <ThemeBackground />
+      <div className="container" style={{ position: "relative", zIndex: 1 }}>
+        <h1>GENIUSES ONLY</h1>
+        <p className="subtitle">Create a wordle puzzle for your friends</p>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 340 }}>
-        <input
-          value={word}
-          onChange={handleWordChange}
-          onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-          placeholder="Enter any word"
-          className="creator-input"
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%", maxWidth: 340 }}>
+          <ThemeSelector selected={themeId} onChange={handleThemeChange} />
 
-        <button
-          onClick={handleCreate}
-          disabled={validating || !word.trim()}
-          className="creator-btn"
-          style={{ background: validating ? "var(--color-absent)" : RAINBOW_GRADIENT }}
-        >
-          {validating ? "Checking..." : "Create Puzzle"}
-        </button>
+          <input
+            value={word}
+            onChange={handleWordChange}
+            onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+            placeholder="Enter any word"
+            className="creator-input"
+          />
 
-        {error && (
-          <p style={{ color: "var(--color-error)", fontSize: 14, textAlign: "center" }}>
-            {error}
-          </p>
-        )}
+          <button
+            onClick={handleCreate}
+            disabled={validating || !word.trim()}
+            className="creator-btn"
+            style={{ background: validating ? "var(--color-absent)" : RAINBOW_GRADIENT }}
+          >
+            {validating ? "Checking..." : "Create Puzzle"}
+          </button>
 
-        {shareLink && (
-          <div className="share-box">
-            <p style={{ fontSize: 13, color: "var(--color-subtle)", margin: "0 0 8px" }}>
-              Share this link:
+          {error && (
+            <p style={{ color: "var(--color-error)", fontSize: 14, textAlign: "center" }}>
+              {error}
             </p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <input readOnly value={shareLink} className="share-input" />
-              <button
-                onClick={handleCopy}
-                className="copy-btn"
-                style={{ background: copied ? "var(--color-correct)" : RAINBOW_GRADIENT }}
-              >
-                {copied ? "Copied!" : "Copy"}
-              </button>
+          )}
+
+          {shareLink && (
+            <div className="share-box">
+              <p style={{ fontSize: 13, color: "var(--color-subtle)", margin: "0 0 8px" }}>
+                Share this link:
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input readOnly value={shareLink} className="share-input" />
+                <button
+                  onClick={handleCopy}
+                  className="copy-btn"
+                  style={{ background: copied ? "var(--color-correct)" : RAINBOW_GRADIENT }}
+                >
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </ThemeProvider>
   );
 }

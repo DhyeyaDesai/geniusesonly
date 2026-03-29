@@ -1,16 +1,21 @@
 import { decode } from "./utils/codec";
-import { StarField } from "./components/StarField";
+import { ThemeProvider } from "./theme/ThemeContext";
 import { CreatorView } from "./components/CreatorView";
 import { PlayView } from "./components/PlayView";
 
 export default function App() {
-  const hash = new URLSearchParams(window.location.search).get("h");
-  const answer = hash ? decode(hash) : null;
+  const params = new URLSearchParams(window.location.search);
+  const hash   = params.get("h");
+  const themeId = params.get("t");
+  const answer  = hash ? decode(hash) : null;
 
-  return (
-    <>
-      <StarField />
-      {answer ? <PlayView answer={answer.toLowerCase()} /> : <CreatorView />}
-    </>
-  );
+  if (answer) {
+    return (
+      <ThemeProvider themeId={themeId}>
+        <PlayView answer={answer.toLowerCase()} />
+      </ThemeProvider>
+    );
+  }
+
+  return <CreatorView />;
 }

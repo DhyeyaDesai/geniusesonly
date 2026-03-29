@@ -22,10 +22,11 @@ export const borderMap: Record<TileColor, string> = {
 
 // Box-shadow values applied to tiles after their flip animation reveals the color.
 // See @keyframes flip in index.css — the --tile-shadow variable is read at the 100% keyframe.
+// These reference CSS custom properties so they respond to the active theme.
 export const shadowMap: Record<TileColor, string> = {
-  correct: "0 0 16px rgba(34, 197, 94, 0.8)",
-  present: "0 0 16px rgba(245, 158, 11, 0.8)",
-  absent:  "0 0 12px rgba(139, 92, 246, 0.6)",
+  correct: "var(--shadow-correct)",
+  present: "var(--shadow-present)",
+  absent:  "var(--shadow-absent)",
   tbd:     "none",
   empty:   "none",
 };

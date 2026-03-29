@@ -103,6 +103,18 @@ export function CreatorView() {
                   {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
+              <button
+                onClick={() => { window.location.href = shareLink; }}
+                className="creator-btn"
+                style={{
+                  marginTop: 8,
+                  background: "var(--title-gradient)",
+                  backgroundSize: "300% auto",
+                  animation: "rainbow-shift 3s linear infinite",
+                }}
+              >
+                Go to Puzzle
+              </button>
             </div>
           )}
         </div>

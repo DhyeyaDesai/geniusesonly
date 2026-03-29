@@ -65,18 +65,48 @@ export function CreatorView() {
             className="creator-input"
           />
 
-          <button
-            onClick={handleCreate}
-            disabled={validating || !word.trim()}
-            className="creator-btn"
-            style={{
-              background: validating ? "var(--color-absent)" : "var(--title-gradient)",
-              backgroundSize: "300% auto",
-              animation: validating ? "none" : "rainbow-shift 3s linear infinite",
-            }}
-          >
-            {validating ? "Checking..." : "Create Puzzle"}
-          </button>
+          {shareLink ? (
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => { window.location.href = shareLink; }}
+                className="creator-btn"
+                style={{
+                  flex: 1,
+                  background: "var(--title-gradient)",
+                  backgroundSize: "300% auto",
+                  animation: "rainbow-shift 3s linear infinite",
+                }}
+              >
+                Go to Puzzle
+              </button>
+              <button
+                onClick={() => { setWord(""); setShareLink(""); setError(""); }}
+                className="creator-btn"
+                style={{
+                  flex: "0 0 auto",
+                  fontSize: 13,
+                  padding: "10px 14px",
+                  background: "var(--color-absent)",
+                  animation: "none",
+                }}
+              >
+                Create Another
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleCreate}
+              disabled={validating || !word.trim()}
+              className="creator-btn"
+              style={{
+                background: validating ? "var(--color-absent)" : "var(--title-gradient)",
+                backgroundSize: "300% auto",
+                animation: validating ? "none" : "rainbow-shift 3s linear infinite",
+              }}
+            >
+              {validating ? "Checking..." : "Create Puzzle"}
+            </button>
+          )}
 
           {error && (
             <p style={{ color: "var(--color-error)", fontSize: 14, textAlign: "center" }}>
@@ -103,18 +133,6 @@ export function CreatorView() {
                   {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
-              <button
-                onClick={() => { window.location.href = shareLink; }}
-                className="creator-btn"
-                style={{
-                  marginTop: 8,
-                  background: "var(--title-gradient)",
-                  backgroundSize: "300% auto",
-                  animation: "rainbow-shift 3s linear infinite",
-                }}
-              >
-                Go to Puzzle
-              </button>
             </div>
           )}
         </div>

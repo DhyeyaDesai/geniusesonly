@@ -320,7 +320,7 @@ export function drawEmoji(
   emoji: string
 ) {
   ctx.save();
-  ctx.font = `${Math.round(s * 1.6)}px sans-serif`;
+  ctx.font = `${Math.round(s * 1.6)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(emoji, cx, cy);

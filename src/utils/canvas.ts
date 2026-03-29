@@ -306,12 +306,14 @@ export function drawDrops(
 
 /**
  * Renders any emoji character centered at (cx, cy) at the given size.
- * Use this instead of writing a custom canvas graphic — the emoji looks
- * exactly like the system emoji by definition.
+ * Uses an offscreen-canvas cache so that drawImage is used for compositing —
+ * this bypasses Safari's fillText+globalAlpha+transform emoji rendering bugs.
  *
  * To add a new "object" to a theme background or win celebration:
  *   drawEmoji(ctx, x, y, size, "🦄")  // that's it
  */
+const _emojiCache = new Map<string, HTMLCanvasElement>();
+
 export function drawEmoji(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -319,12 +321,27 @@ export function drawEmoji(
   s: number,
   emoji: string
 ) {
-  ctx.save();
-  ctx.font = `${Math.round(s * 1.6)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(emoji, cx, cy);
-  ctx.restore();
+  // Snap to nearest 2px so cache stays small across many random particle sizes
+  const dim = Math.round(s * 2 / 2) * 2;
+  const dpr = window.devicePixelRatio || 1;
+  const px  = Math.round(dim * dpr);   // physical pixels for crisp HiDPI
+  const key = `${emoji}_${px}`;
+
+  if (!_emojiCache.has(key)) {
+    const oc     = document.createElement("canvas");
+    oc.width     = px;
+    oc.height    = px;
+    const oc_ctx = oc.getContext("2d")!;
+    oc_ctx.font         = `${Math.round(px * 0.78)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    oc_ctx.textAlign    = "center";
+    oc_ctx.textBaseline = "middle";
+    oc_ctx.fillText(emoji, px / 2, px / 2);
+    _emojiCache.set(key, oc);
+  }
+
+  // drawImage respects the caller's transform (rotation, translation) and
+  // globalAlpha correctly on all browsers including Safari
+  ctx.drawImage(_emojiCache.get(key)!, cx - dim / 2, cy - dim / 2, dim, dim);
 }
 
 /** Setup a canvas to fill the viewport at device pixel ratio for crisp rendering.
